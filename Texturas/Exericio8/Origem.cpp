@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -23,7 +24,7 @@ struct Vertex {
 };
 
 struct Face {
-	string v1, v2, v3;
+	string v1, v2, v3, t1, t2, t3;
 };
 
 struct Texture {
@@ -31,6 +32,8 @@ struct Texture {
 };
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+
+string getTextureFile(string filename);
 
 void readFromFile(string filename, vector<Vertex>& vertices, vector<Face>& faces, vector<Texture>& textures);
 
@@ -77,7 +80,7 @@ int main()
 
 	GLuint VAO = setupObj();
 
-	GLuint texID = loadTexture("../textures/Cube.png");
+	GLuint texID = loadTexture(getTextureFile("../textures/SuzanneTriTextured.mtl"));
 
 	glUseProgram(shader.ID);
 
@@ -170,6 +173,33 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
+string getTextureFile(string filename)
+{
+	string line, path;
+
+	ifstream file(filename);
+
+	while (getline(file, line))
+	{
+		if (line.empty()) {
+			continue;
+		}
+
+		if (line.substr(0, 6).compare("map_Kd") == 0)
+		{
+			path = line.substr(7);
+		}
+	}
+
+	if (path.empty()) {
+		cout << "Arquivo .mtl não contém caminho para a textura." << endl;
+	}
+
+	file.close();
+
+	return path;
+}
+
 void readFromFile(string filename, vector<Vertex>& vertices, vector<Face>& faces, vector<Texture>& textures)
 {
 	string line;
@@ -189,16 +219,22 @@ void readFromFile(string filename, vector<Vertex>& vertices, vector<Face>& faces
 		}
 		else if (line.substr(0, 2) == "f ")
 		{
+			replace(line.begin(), line.end(), '/', ' ');
+
 			istringstream s(line.substr(2));
 
 			Face face;
-			string v1, v2, v3;
+			string v1, v2, v3, t1, t2, t3, n1, n2, n3;
 			
-			s >> v1 >> v2 >> v3;
+			s >> v1 >> t1 >> n1 >> v2 >> t2 >> n2 >> v3 >> t3 >> n3;
 
 			face.v1 = v1;
 			face.v2 = v2;
 			face.v3 = v3;
+
+			face.t1 = t1;
+			face.t2 = t2;
+			face.t3 = t3;
 
 			faces.push_back(face);
 		}
@@ -224,35 +260,38 @@ void readFromFile(string filename, vector<Vertex>& vertices, vector<Face>& faces
 void buildVertices(vector<GLfloat>& finalVertices, vector<Vertex> vertices, vector<Texture> textures, vector<Face> faces) {
 	for (size_t i = 0; i < faces.size(); i++) {
 		
-		int v1Position = faces[i].v1 - 1;
+		int v1Position = stoi(faces[i].v1) - 1;
+		int t1Position = stoi(faces[i].t1) - 1;
 		finalVertices.push_back(vertices[v1Position].x);
 		finalVertices.push_back(vertices[v1Position].y);
 		finalVertices.push_back(vertices[v1Position].z);
 		finalVertices.push_back(vertices[v1Position].r);
 		finalVertices.push_back(vertices[v1Position].g);
 		finalVertices.push_back(vertices[v1Position].b);
-		finalVertices.push_back(textures[v1Position].t1);
-		finalVertices.push_back(textures[v1Position].t2);
+		finalVertices.push_back(textures[t1Position].t1);
+		finalVertices.push_back(textures[t1Position].t2);
 
-		int v2Position = faces[i].v2 - 1;
+		int v2Position = stoi(faces[i].v2) - 1;
+		int t2Position = stoi(faces[i].t2) - 1;
 		finalVertices.push_back(vertices[v2Position].x);
 		finalVertices.push_back(vertices[v2Position].y);
 		finalVertices.push_back(vertices[v2Position].z);
 		finalVertices.push_back(vertices[v2Position].r);
 		finalVertices.push_back(vertices[v2Position].g);
 		finalVertices.push_back(vertices[v2Position].b);
-		finalVertices.push_back(textures[v2Position].t1);
-		finalVertices.push_back(textures[v2Position].t2);
+		finalVertices.push_back(textures[t2Position].t1);
+		finalVertices.push_back(textures[t2Position].t2);
 
-		int v3Position = faces[i].v3 - 1;
+		int v3Position = stoi(faces[i].v3) - 1;
+		int t3Position = stoi(faces[i].t3) - 1;
 		finalVertices.push_back(vertices[v3Position].x);
 		finalVertices.push_back(vertices[v3Position].y);
 		finalVertices.push_back(vertices[v3Position].z);
 		finalVertices.push_back(vertices[v3Position].r);
 		finalVertices.push_back(vertices[v3Position].g);
 		finalVertices.push_back(vertices[v3Position].b);
-		finalVertices.push_back(textures[v3Position].t1);
-		finalVertices.push_back(textures[v3Position].t2);
+		finalVertices.push_back(textures[t3Position].t1);
+		finalVertices.push_back(textures[t3Position].t2);
 	}
 }
 
@@ -301,7 +340,7 @@ int loadTexture(string path)
 
 int setupObj()
 {
-	readFromFile("cube.obj", vertices, faces, textures);
+	readFromFile("../textures/SuzanneTriTextured.obj", vertices, faces, textures);
 	
 	buildVertices(finalVertices, vertices, textures, faces);
 
