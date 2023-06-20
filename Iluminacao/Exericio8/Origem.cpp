@@ -20,7 +20,7 @@ using namespace std;
 #include "Shader.h"
 
 struct Vertex {
-	GLfloat x, y, z, r = 1.0, g = 0.0, b = 1.0;
+	GLfloat x, y, z, r = 0.43, g = 0.75, b = 0.35;
 };
 
 struct Face {
