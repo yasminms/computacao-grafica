@@ -35,9 +35,13 @@ struct Normal {
 	GLfloat n1, n2, n3;
 };
 
+struct NormalProperties {
+	GLfloat ka = 0.2, ks = 0.5, q = 10.0;
+};
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 
-string getTextureFile(string filename);
+void getMtlProperties(string filename, NormalProperties& normalProperties);
 
 void readFromObjFile(string filename, vector<Vertex>& vertices, vector<Face>& faces, vector<Texture>& textures, vector<Normal>& normals);
 
@@ -59,7 +63,7 @@ int main()
 {
 	glfwInit();
 
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Iluminação", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Iluminacao", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 
 	glfwSetKeyCallback(window, key_callback);
@@ -103,10 +107,14 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
-	shader.setFloat("ka", 0.2);
-	shader.setFloat("kd", 0.5);
-	shader.setFloat("ks", 0.5);
-	shader.setFloat("q", 10.0);
+	NormalProperties normalProperties;
+
+	getMtlProperties("../textures/SuzanneTriTextured.mtl", normalProperties);
+
+	shader.setFloat("ka", normalProperties.ka);
+	shader.setFloat("kd", 1.0);
+	shader.setFloat("ks", normalProperties.ks);
+	shader.setFloat("q", normalProperties.q);
 
 	shader.setVec3("lightPos", -2.0, 10.0, 2.0);
 	shader.setVec3("lightColor", 1.0, 1.0, 0.0);
@@ -187,7 +195,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
-string getTextureFile(string filename)
+void getMtlProperties(string filename, NormalProperties& normalProperties)
 {
 	string line, path;
 
@@ -199,19 +207,19 @@ string getTextureFile(string filename)
 			continue;
 		}
 
-		if (line.substr(0, 6).compare("map_Kd") == 0)
+		if (line.substr(0, 2).compare("Ka") == 0)
 		{
-			path = line.substr(7);
+			normalProperties.ka = stof(line.substr(3));
+		}
+		else if (line.substr(0, 2).compare("Ks") == 0)
+		{
+			normalProperties.ks = stof(line.substr(3));
+		}
+		else if (line.substr(0, 2).compare("Ns") == 0)
+		{
+			normalProperties.q = stof(line.substr(3));
 		}
 	}
-
-	if (path.empty()) {
-		cout << "Arquivo .mtl não contém caminho para a textura." << endl;
-	}
-
-	file.close();
-
-	return path;
 }
 
 void readFromObjFile(string filename, vector<Vertex>& vertices, vector<Face>& faces, vector<Texture>& textures, vector<Normal>& normals)
