@@ -20,7 +20,7 @@ using namespace std;
 #include "Shader.h"
 
 struct Vertex {
-	GLfloat x, y, z, r = 0.43, g = 0.75, b = 0.35;
+	GLfloat x, y, z, r = 0.0, g = 0.0, b = 0.0;
 };
 
 struct Face {
@@ -46,6 +46,10 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void getMtlProperties(string filename, NormalProperties& normalProperties);
 
 void readFromObjFile(string filename, vector<Vertex>& vertices, vector<Face>& faces, vector<Texture>& textures, vector<Normal>& normals);
+
+int loadTexture(string path);
+
+string getTextureFile(string filename);
 
 void buildVertices(vector<GLfloat>& finalVertices);
 
@@ -104,6 +108,8 @@ int main()
 
 	GLuint VAO = setupGeometry();
 
+	GLuint texID = loadTexture(getTextureFile("../textures/SuzanneTriTextured.mtl"));
+
 	glUseProgram(shader.ID);
 
 	glUniform1i(glGetUniformLocation(shader.ID, "tex_buffer"), 0);
@@ -129,7 +135,7 @@ int main()
 	getMtlProperties("../textures/SuzanneTriTextured.mtl", normalProperties);
 
 	shader.setFloat("ka", normalProperties.ka);
-	shader.setFloat("kd", 1.0);
+	shader.setFloat("kd", 0.2);
 	shader.setFloat("ks", normalProperties.ks);
 	shader.setFloat("q", normalProperties.q);
 
@@ -175,6 +181,8 @@ int main()
 		model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
 
 		glUniformMatrix4fv(modelLoc, 1, FALSE, glm::value_ptr(model));
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texID);
 
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, finalVertices.size());
@@ -265,6 +273,76 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	front.z = sin(glm::radians(yRotation)) * cos(glm::radians(xRotation));
 	cameraFront = glm::normalize(front);
 }
+
+int loadTexture(string path)
+{
+	GLuint texID;
+
+	glGenTextures(1, &texID);
+	glBindTexture(GL_TEXTURE_2D, texID);
+
+	//Ajusta os parâmetros de wrapping e filtering
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	//Carregamento da imagem
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
+
+	if (data)
+	{
+		if (nrChannels == 3) //jpg, bmp
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		}
+		else //png
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		}
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}
+
+	stbi_image_free(data);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	return texID;
+}
+
+string getTextureFile(string filename)
+{
+	string line, path;
+
+	ifstream file(filename);
+
+	while (getline(file, line))
+	{
+		if (line.empty()) {
+			continue;
+		}
+
+		if (line.substr(0, 6).compare("map_Kd") == 0)
+		{
+			path = line.substr(7);
+		}
+	}
+
+	if (path.empty()) {
+		cout << "Arquivo .mtl não contém caminho para a textura." << endl;
+	}
+
+	file.close();
+
+	return path;
+}
+
 
 void getMtlProperties(string filename, NormalProperties& normalProperties)
 {

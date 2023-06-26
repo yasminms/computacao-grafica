@@ -41,7 +41,9 @@ void main()
 	spec = pow(spec,q);
 	vec3 specular = ks * spec * lightColor;
 
-	vec3 result = (ambient + diffuse) * outColor + specular;
+	vec3 textureColor = texture(tex_buffer, outTextureCoordinate).xyz;
+
+	vec3 result = (ambient + diffuse) * textureColor + specular;
 
 	color = vec4(result,1.0);
 }
