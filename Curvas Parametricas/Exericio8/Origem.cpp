@@ -19,7 +19,7 @@ using namespace std;
 
 #include "Shader.h"
 
-#include "Hermite.h"
+#include "Bezier.h"
 
 struct Vertex {
 	GLfloat x, y, z, r = 0.0, g = 0.0, b = 0.0;
@@ -49,6 +49,8 @@ void getMtlProperties(string filename, NormalProperties& normalProperties);
 
 void readFromObjFile(string filename, vector<Vertex>& vertices, vector<Face>& faces, vector<Texture>& textures, vector<Normal>& normals);
 
+vector<float> readFromTxtFile(string filename);
+
 int loadTexture(string path);
 
 string getTextureFile(string filename);
@@ -59,7 +61,7 @@ std::vector<glm::vec3> generateControlPointsSet();
 
 int setupGeometry();
 
-const GLuint WIDTH = 1500, HEIGHT = 1500;
+const GLuint WIDTH = 1000, HEIGHT = 1000;
 
 bool rotateX=false, rotateY=false, rotateZ=false;
 
@@ -111,7 +113,7 @@ int main()
 
 	GLuint VAO = setupGeometry();
 
-	GLuint texID = loadTexture(getTextureFile("../textures/SuzanneTriTextured.mtl"));
+	GLuint texID = loadTexture(getTextureFile("../files/SuzanneTriTextured.mtl"));
 
 	glUseProgram(shader.ID);
 
@@ -135,7 +137,7 @@ int main()
 
 	NormalProperties normalProperties;
 
-	getMtlProperties("../textures/SuzanneTriTextured.mtl", normalProperties);
+	getMtlProperties("../files/SuzanneTriTextured.mtl", normalProperties);
 
 	shader.setFloat("ka", normalProperties.ka);
 	shader.setFloat("kd", 0.2);
@@ -143,18 +145,19 @@ int main()
 	shader.setFloat("q", normalProperties.q);
 
 	shader.setVec3("lightPos", -2.0, 10.0, 2.0);
-	shader.setVec3("lightColor", 1.0, 1.0, 0.0);
+	shader.setVec3("lightColor", 1.0, 1.0, 0.8);
 
 	std::vector<glm::vec3> controlPoints = generateControlPointsSet();
 	
-	Hermite hermite;
+	Bezier hermite;
 	hermite.setControlPoints(controlPoints);
 	hermite.setShader(&shader);
 	hermite.generateCurve(500);
 
+	cout << controlPoints.size() << endl;
+
 	int nbCurvePoints = hermite.getNbCurvePoints();
 	int i = 0;
-	cout << nbCurvePoints <<  endl;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -197,7 +200,7 @@ int main()
 		//Atualizando o shader com a posição da câmera
 		shader.setVec3("cameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
 
-		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
+		model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
 
 		glUniformMatrix4fv(modelLoc, 1, FALSE, glm::value_ptr(model));
 		glActiveTexture(GL_TEXTURE0);
@@ -467,6 +470,32 @@ void readFromObjFile(string filename, vector<Vertex>& vertices, vector<Face>& fa
 	file.close();
 }
 
+vector<float> readFromTxtFile(string filename)
+{
+	string line;
+
+	ifstream file(filename);
+
+	vector<float> points;
+
+	while (getline(file, line))
+	{
+		istringstream s(line);
+
+		float x, y, z;
+
+		s >> x >> y >> z;
+
+		points.push_back(x);
+		points.push_back(y);
+		points.push_back(z);
+	}
+
+	file.close();
+
+	return points;
+}
+
 void setVertexPosition(vector<GLfloat>& finalVertices, int vertexPosition, int texturePosition, int normalPosition) {
 	finalVertices.push_back(vertices[vertexPosition].x);
 	finalVertices.push_back(vertices[vertexPosition].y);
@@ -503,36 +532,26 @@ void buildVertices(vector<GLfloat>& finalVertices) {
 
 std::vector<glm::vec3> generateControlPointsSet()
 {
-	float points[] = {
-		-0.8, 0.8, 0.0,
-		//-0.4, 0.0, 0.0,
-		-0.8, -0.8, 0.0,
-		//0.0, -0.4, 0.0,
-		0.8, -0.8, 0.0,
-		//0.4, 0.0, 0.0,
-		0.8, 0.8, 0.0,
-		//0.0, 0.4, 0.0,
-		-0.8, 0.8, 0.0
-	};
+	vector<float> points = readFromTxtFile("../files/curvePoints.txt");
 
-	vector <glm::vec3> uniPoints;
+	vector <glm::vec3> curvePoints;
 
-	for (int i = 0; i < 5 * 3; i += 3)
+	for (int i = 0; i < points.size(); i += 3)
 	{
 		glm::vec3 point;
 		point.x = points[i];
 		point.y = points[i + 1];
-		point.z = 0.0;
+		point.z = points[i + 2];
 		
-		uniPoints.push_back(point);
+		curvePoints.push_back(point);
 	}
 
-	return uniPoints;
+	return curvePoints;
 }
 
 int setupGeometry()
 {
-	readFromObjFile("../textures/SuzanneTriTextured.obj", vertices, faces, textures, normals);
+	readFromObjFile("../files/SuzanneTriTextured.obj", vertices, faces, textures, normals);
 	
 	buildVertices(finalVertices);
 
