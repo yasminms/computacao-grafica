@@ -24,7 +24,7 @@
     <ProjectGuid>{7fe17440-8d2f-4c19-8fd0-3e841706c02e}</ProjectGuid>
     <RootNamespace>Texturas</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Curvas Parametricas</ProjectName>
+    <ProjectName>Trabalho Final</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

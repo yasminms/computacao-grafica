@@ -111,10 +111,10 @@ int main()
 
 	Shader shader("../shaders/sprite.vs", "../shaders/sprite.fs");
 
-	GLuint VAO = setupGeometry("../files/SuzanneTriTextured.obj", vertices1, faces1, textures1, normals1, finalVertices1);
+	GLuint VAO = setupGeometry("../files/suzanne.obj", vertices1, faces1, textures1, normals1, finalVertices1);
 	GLuint VAO2 = setupGeometry("../files/cube.obj", vertices2, faces2, textures2, normals2, finalVertices2);
 
-	GLuint texID = loadTexture(getTextureFile("../files/SuzanneTriTextured.mtl"));
+	GLuint texID = loadTexture(getTextureFile("../files/suzanne.mtl"));
 	GLuint texID2 = loadTexture(getTextureFile("../files/cube.mtl"));
 
 	glUseProgram(shader.ID);
@@ -139,7 +139,7 @@ int main()
 
 	NormalProperties normalProperties1, normalProperties2;
 
-	getMtlProperties("../files/SuzanneTriTextured.mtl", normalProperties1);
+	getMtlProperties("../files/suzanne.mtl", normalProperties1);
 	getMtlProperties("../files/cube.mtl", normalProperties2);
 
 	shader.setVec3("lightPos", -2.0, 10.0, 2.0);
